@@ -1,0 +1,12 @@
+{
+  "name": "employee-journey-ai",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+    "build": "pnpm --filter frontend build && pnpm --filter backend build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
