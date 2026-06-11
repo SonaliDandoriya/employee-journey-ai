@@ -1,4 +1,4 @@
-import { AIInsights, AskAIResponse, Employee } from '../types';
+import { AIInsights, AskAIResponse, Employee, PendingEmployee, PendingHireInsights } from '../types';
 
 const request = async <T>(input: RequestInfo, init?: RequestInit): Promise<T> => {
   const response = await fetch(input, {
@@ -30,5 +30,8 @@ export const api = {
     request<AskAIResponse>('/api/ai/ask', {
       method: 'POST',
       body: JSON.stringify(payload)
-    })
+    }),
+  getPendingHires: (managerId = 'mgr-001') => request<PendingEmployee[]>(`/api/pending-hires?managerId=${managerId}`),
+  getPendingHire: (id: string) => request<PendingEmployee>(`/api/pending-hires/${id}`),
+  getPendingHireInsights: (id: string) => request<PendingHireInsights>(`/api/pending-hires/${id}/insights`)
 };

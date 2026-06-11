@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getEmployeeById, getEmployeesForManager } from '../data/mockData';
-import { generateJourneySummary } from '../services/aiService';
+import { getEmployeeById, getEmployeesForManager, getPendingEmployeeById, getPendingEmployeesForManager } from '../data/mockData';
+import { generateJourneySummary, generatePendingHireInsights } from '../services/aiService';
 
 const employeesRouter = Router();
 
@@ -32,4 +32,37 @@ employeesRouter.get('/:id', (req, res) => {
   res.json(employee);
 });
 
+// ─── Pending / pre-boarding hires ────────────────────────────────────────────
+
+const pendingRouter = Router();
+
+pendingRouter.get('/', (req, res) => {
+  const managerId = typeof req.query.managerId === 'string' ? req.query.managerId : undefined;
+  res.json(getPendingEmployeesForManager(managerId));
+});
+
+pendingRouter.get('/:id/insights', async (req, res) => {
+  const pending = getPendingEmployeeById(req.params.id);
+
+  if (!pending) {
+    res.status(404).json({ message: 'Pending hire not found' });
+    return;
+  }
+
+  const insights = await generatePendingHireInsights(pending);
+  res.json(insights);
+});
+
+pendingRouter.get('/:id', (req, res) => {
+  const pending = getPendingEmployeeById(req.params.id);
+
+  if (!pending) {
+    res.status(404).json({ message: 'Pending hire not found' });
+    return;
+  }
+
+  res.json(pending);
+});
+
+export { pendingRouter };
 export default employeesRouter;

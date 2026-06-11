@@ -2,7 +2,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import aiRouter from './routes/ai';
-import employeesRouter from './routes/employees';
+import employeesRouter, { pendingRouter } from './routes/employees';
 
 dotenv.config();
 
@@ -17,6 +17,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/employees', employeesRouter);
+app.use('/api/pending-hires', pendingRouter);
 app.use('/api/ai', aiRouter);
 
 app.use((_req, res) => {

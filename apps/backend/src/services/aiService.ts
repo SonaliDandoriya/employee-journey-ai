@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { Employee, getEmployeeById, getEmployeesForManager } from '../data/mockData';
+import { Employee, PendingEmployee, getEmployeeById, getEmployeesForManager } from '../data/mockData';
 
 interface EmployeeInsightPayload {
   summary: string;
@@ -343,5 +343,112 @@ export const askEmployeeQuestion = async (question: string, employeeId?: string,
     };
   } catch {
     return mockResponse;
+  }
+};
+
+// ─── Pending hire insights ────────────────────────────────────────────────────
+
+interface PendingHireInsights {
+  summary: string;
+  preparationStatus: string;
+  recommendedActions: string[];
+  keyHighlights: string[];
+}
+
+const buildPendingHireSummary = (pending: PendingEmployee): string => {
+  const startDate = formatDate(pending.expectedStartDate);
+  const daysUntilStart = Math.ceil((new Date(pending.expectedStartDate).getTime() - Date.now()) / 86_400_000);
+  const daysLabel = daysUntilStart > 0 ? `in ${daysUntilStart} day${daysUntilStart !== 1 ? 's' : ''}` : 'today';
+  const pendingTasks = pending.preBoardingWorkflow.tasks.filter((t) => !t.completed);
+  const blockers = pending.preBoardingWorkflow.tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(pending.expectedStartDate));
+
+  return `${pending.name} is joining as ${pending.intendedRole} in ${pending.department} on ${startDate} (${daysLabel}). ` +
+    `Their pre-boarding workflow is ${pending.preBoardingWorkflow.progress}% complete — ` +
+    `${pending.preBoardingWorkflow.completedTasks} of ${pending.preBoardingWorkflow.totalTasks} tasks done. ` +
+    (pendingTasks.length > 0
+      ? `${pendingTasks.length} task${pendingTasks.length !== 1 ? 's' : ''} remain${pendingTasks.length === 1 ? 's' : ''} before their start date.`
+      : 'All pre-boarding tasks are on track.') +
+    (blockers.length > 0 ? ` ${blockers.length} item${blockers.length !== 1 ? 's' : ''} may need escalation to stay on schedule.` : '');
+};
+
+const buildPendingHirePreparationStatus = (pending: PendingEmployee): string => {
+  const ownerGroups: Record<string, string[]> = { manager: [], hr: [], it: [], candidate: [] };
+  for (const task of pending.preBoardingWorkflow.tasks.filter((t) => !t.completed)) {
+    ownerGroups[task.owner]?.push(task.name);
+  }
+
+  const parts: string[] = [];
+  if (ownerGroups.manager.length) parts.push(`Manager actions pending: ${ownerGroups.manager.join(', ')}`);
+  if (ownerGroups.hr.length) parts.push(`HR actions pending: ${ownerGroups.hr.join(', ')}`);
+  if (ownerGroups.it.length) parts.push(`IT actions pending: ${ownerGroups.it.join(', ')}`);
+  if (ownerGroups.candidate.length) parts.push(`Candidate actions pending: ${ownerGroups.candidate.join(', ')}`);
+
+  return parts.length > 0 ? parts.join('. ') + '.' : 'No outstanding actions — all pre-boarding steps are complete.';
+};
+
+const buildPendingHireRecommendedActions = (pending: PendingEmployee): string[] => {
+  const actions = new Set<string>();
+  const daysUntilStart = Math.ceil((new Date(pending.expectedStartDate).getTime() - Date.now()) / 86_400_000);
+
+  const managerTasks = pending.preBoardingWorkflow.tasks.filter((t) => !t.completed && t.owner === 'manager');
+  if (managerTasks.length > 0) actions.add(`Complete your ${managerTasks.length} manager pre-boarding task(s): ${managerTasks.map((t) => t.name).join(', ')}.`);
+
+  const itTasks = pending.preBoardingWorkflow.tasks.filter((t) => !t.completed && t.owner === 'it');
+  if (itTasks.length > 0) actions.add(`Follow up with IT on ${itTasks.length} pending task(s) to ensure Day 1 readiness.`);
+
+  const hrTasks = pending.preBoardingWorkflow.tasks.filter((t) => !t.completed && t.owner === 'hr');
+  if (hrTasks.length > 0) actions.add(`Confirm HR has progressed: ${hrTasks.map((t) => t.name).join(', ')}.`);
+
+  if (daysUntilStart <= 7) actions.add('Start date is within one week — confirm all critical pre-boarding steps are complete.');
+  if (daysUntilStart <= 14 && daysUntilStart > 7) actions.add('Start date is within two weeks — escalate any blocked items now.');
+
+  if (!pending.preBoardingWorkflow.tasks.find((t) => t.name.toLowerCase().includes('buddy') && t.completed)) {
+    actions.add("Assign a learning buddy before the candidate's start date to accelerate onboarding ramp.");
+  }
+
+  if (actions.size === 0) actions.add('Pre-boarding is well on track. Send a personalised welcome message to the candidate.');
+
+  return Array.from(actions).slice(0, 4);
+};
+
+const buildPendingHireHighlights = (pending: PendingEmployee): string[] => {
+  const daysUntilStart = Math.ceil((new Date(pending.expectedStartDate).getTime() - Date.now()) / 86_400_000);
+  const ownerCounts = pending.preBoardingWorkflow.tasks
+    .filter((t) => !t.completed)
+    .reduce<Record<string, number>>((acc, t) => ({ ...acc, [t.owner]: (acc[t.owner] ?? 0) + 1 }), {});
+
+  return [
+    `Joining as ${pending.intendedRole} on ${formatDate(pending.expectedStartDate)} (${daysUntilStart} day${daysUntilStart !== 1 ? 's' : ''})`,
+    `Pre-boarding workflow: ${pending.preBoardingWorkflow.progress}% complete (${pending.preBoardingWorkflow.completedTasks}/${pending.preBoardingWorkflow.totalTasks} tasks)`,
+    ...Object.entries(ownerCounts).map(([owner, count]) => `${count} task${count !== 1 ? 's' : ''} pending with ${owner.toUpperCase()}`),
+    ...(pending.notes ? [`Note: ${pending.notes}`] : [])
+  ].slice(0, 4);
+};
+
+export const generatePendingHireInsights = async (pending: PendingEmployee): Promise<PendingHireInsights> => {
+  const mock: PendingHireInsights = {
+    summary: buildPendingHireSummary(pending),
+    preparationStatus: buildPendingHirePreparationStatus(pending),
+    recommendedActions: buildPendingHireRecommendedActions(pending),
+    keyHighlights: buildPendingHireHighlights(pending)
+  };
+
+  const aiResponse = await callOpenAI(
+    'You are an HR analytics copilot. Given a pending hire pre-boarding workflow, return JSON with keys summary, preparationStatus, recommendedActions (array), keyHighlights (array).',
+    `Pending hire data: ${JSON.stringify(pending)}`
+  ).catch(() => null);
+
+  if (!aiResponse) return mock;
+
+  try {
+    const parsed = JSON.parse(aiResponse) as PendingHireInsights;
+    return {
+      summary: parsed.summary ?? mock.summary,
+      preparationStatus: parsed.preparationStatus ?? mock.preparationStatus,
+      recommendedActions: Array.isArray(parsed.recommendedActions) && parsed.recommendedActions.length > 0 ? parsed.recommendedActions : mock.recommendedActions,
+      keyHighlights: Array.isArray(parsed.keyHighlights) && parsed.keyHighlights.length > 0 ? parsed.keyHighlights : mock.keyHighlights
+    };
+  } catch {
+    return mock;
   }
 };

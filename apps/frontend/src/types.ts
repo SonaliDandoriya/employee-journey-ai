@@ -50,6 +50,43 @@ export interface Employee {
   riskScore: number;
 }
 
+export interface PreBoardingTask {
+  name: string;
+  owner: 'manager' | 'hr' | 'it' | 'candidate';
+  completed: boolean;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface PendingEmployee {
+  id: string;
+  workflowId: string;
+  name: string;
+  intendedRole: string;
+  department: string;
+  manager: string;
+  avatar: string;
+  expectedStartDate: string;
+  offerAcceptedDate: string;
+  candidateEmail: string;
+  status: 'pre_boarding';
+  preBoardingWorkflow: {
+    name: string;
+    progress: number;
+    completedTasks: number;
+    totalTasks: number;
+    tasks: PreBoardingTask[];
+  };
+  notes?: string;
+}
+
+export interface PendingHireInsights {
+  summary: string;
+  preparationStatus: string;
+  recommendedActions: string[];
+  keyHighlights: string[];
+}
+
 export interface AIInsights {
   summary: string;
   riskAnalysis: string;

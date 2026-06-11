@@ -363,3 +363,118 @@ export const getEmployeeById = (id: string): Employee | undefined => {
   const { managerId: _managerId, ...employee } = record;
   return employee;
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pending / pre-boarding hires — exist only as workflow candidates, no profile
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PreBoardingTask {
+  name: string;
+  owner: 'manager' | 'hr' | 'it' | 'candidate';
+  completed: boolean;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface PendingEmployee {
+  id: string;
+  workflowId: string;
+  name: string;
+  intendedRole: string;
+  department: string;
+  manager: string;
+  managerId: string;
+  avatar: string;
+  expectedStartDate: string;
+  offerAcceptedDate: string;
+  candidateEmail: string;
+  status: 'pre_boarding';
+  preBoardingWorkflow: {
+    name: string;
+    progress: number;
+    completedTasks: number;
+    totalTasks: number;
+    tasks: PreBoardingTask[];
+  };
+  notes?: string;
+}
+
+type PendingEmployeeRecord = PendingEmployee;
+
+export const pendingEmployees: PendingEmployeeRecord[] = [
+  {
+    id: 'wf-3001',
+    workflowId: 'OB-WORKFLOW-3001',
+    name: 'Marcus Johnson',
+    intendedRole: 'Senior Software Engineer',
+    department: 'Product Engineering',
+    manager: 'Alex Morgan',
+    managerId: 'mgr-001',
+    avatar: 'MJ',
+    expectedStartDate: '2026-06-25',
+    offerAcceptedDate: '2026-06-02',
+    candidateEmail: 'marcus.johnson@personal.com',
+    status: 'pre_boarding',
+    preBoardingWorkflow: {
+      name: 'New Hire Pre-Boarding — Senior Software Engineer',
+      progress: 58,
+      completedTasks: 7,
+      totalTasks: 12,
+      tasks: [
+        { name: 'Offer letter sent', owner: 'hr', completed: true },
+        { name: 'Offer accepted by candidate', owner: 'candidate', completed: true },
+        { name: 'Background check initiated', owner: 'hr', completed: true },
+        { name: 'Background check cleared', owner: 'hr', completed: true },
+        { name: 'Right-to-work documents verified', owner: 'hr', completed: true },
+        { name: 'Employment contract signed', owner: 'candidate', completed: true },
+        { name: 'Laptop and equipment ordered', owner: 'it', completed: true },
+        { name: 'Corporate email account created', owner: 'it', completed: false, dueDate: '2026-06-18', notes: 'Awaiting IT provisioning queue' },
+        { name: 'System access and SSO configured', owner: 'it', completed: false, dueDate: '2026-06-20' },
+        { name: 'Day 1 schedule prepared by manager', owner: 'manager', completed: false, dueDate: '2026-06-23' },
+        { name: 'Learning buddy assigned', owner: 'manager', completed: false, dueDate: '2026-06-23' },
+        { name: 'Welcome pack sent to candidate', owner: 'hr', completed: false, dueDate: '2026-06-20' }
+      ]
+    },
+    notes: 'Relocating from Oslo. Requires remote setup for first two weeks.'
+  },
+  {
+    id: 'wf-3002',
+    workflowId: 'OB-WORKFLOW-3002',
+    name: 'Aisha Okonkwo',
+    intendedRole: 'Talent Acquisition Specialist',
+    department: 'People & Culture',
+    manager: 'Alex Morgan',
+    managerId: 'mgr-001',
+    avatar: 'AO',
+    expectedStartDate: '2026-07-07',
+    offerAcceptedDate: '2026-06-08',
+    candidateEmail: 'aisha.okonkwo@personal.com',
+    status: 'pre_boarding',
+    preBoardingWorkflow: {
+      name: 'New Hire Pre-Boarding — Talent Acquisition Specialist',
+      progress: 25,
+      completedTasks: 3,
+      totalTasks: 12,
+      tasks: [
+        { name: 'Offer letter sent', owner: 'hr', completed: true },
+        { name: 'Offer accepted by candidate', owner: 'candidate', completed: true },
+        { name: 'Background check initiated', owner: 'hr', completed: true },
+        { name: 'Background check cleared', owner: 'hr', completed: false, dueDate: '2026-06-20', notes: 'Results expected by June 20' },
+        { name: 'Right-to-work documents verified', owner: 'hr', completed: false, dueDate: '2026-06-21' },
+        { name: 'Employment contract signed', owner: 'candidate', completed: false, dueDate: '2026-06-22' },
+        { name: 'Laptop and equipment ordered', owner: 'it', completed: false, dueDate: '2026-06-24' },
+        { name: 'Corporate email account created', owner: 'it', completed: false, dueDate: '2026-06-28' },
+        { name: 'System access and SSO configured', owner: 'it', completed: false, dueDate: '2026-06-30' },
+        { name: 'Day 1 schedule prepared by manager', owner: 'manager', completed: false, dueDate: '2026-07-04' },
+        { name: 'Learning buddy assigned', owner: 'manager', completed: false, dueDate: '2026-07-04' },
+        { name: 'Welcome pack sent to candidate', owner: 'hr', completed: false, dueDate: '2026-06-28' }
+      ]
+    }
+  }
+];
+
+export const getPendingEmployeesForManager = (managerId?: string): PendingEmployee[] =>
+  managerId ? pendingEmployees.filter((p) => p.managerId === managerId) : pendingEmployees;
+
+export const getPendingEmployeeById = (id: string): PendingEmployee | undefined =>
+  pendingEmployees.find((p) => p.id === id);

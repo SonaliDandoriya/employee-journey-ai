@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { Header } from './components/Layout/Header';
 import { Sidebar } from './components/Layout/Sidebar';
 import { EmployeeJourney } from './pages/EmployeeJourney';
+import { PreBoardingJourney } from './pages/PreBoardingJourney';
 import { TeamDashboard } from './pages/TeamDashboard';
 
 const LayoutShell = () => {
@@ -26,6 +27,7 @@ const App = () => (
     <Route element={<LayoutShell />}>
       <Route path="/" element={<TeamDashboard />} />
       <Route path="/employee/:id" element={<EmployeeJourney />} />
+      <Route path="/incoming/:id" element={<PreBoardingJourney />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Route>
   </Routes>

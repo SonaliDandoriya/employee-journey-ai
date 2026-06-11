@@ -1,10 +1,11 @@
-import { AlertTriangle, GraduationCap, ShieldAlert, Users } from 'lucide-react';
+import { AlertTriangle, GraduationCap, ShieldAlert, UserPlus, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { AIInsightsPanel } from '../components/AIInsightsPanel';
 import { EmployeeCard } from '../components/EmployeeCard';
+import { PendingEmployeeCard } from '../components/PendingEmployeeCard';
 import { api } from '../services/api';
-import { AskAIResponse, Employee } from '../types';
+import { AskAIResponse, Employee, PendingEmployee } from '../types';
 
 interface LayoutContext {
   searchQuery: string;
@@ -20,6 +21,7 @@ const summaryCardStyles = [
 export const TeamDashboard = () => {
   const { searchQuery } = useOutletContext<LayoutContext>();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [pendingHires, setPendingHires] = useState<PendingEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [aiResponse, setAIResponse] = useState<AskAIResponse | null>(null);
@@ -27,11 +29,15 @@ export const TeamDashboard = () => {
   const [aiError, setAIError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadEmployees = async () => {
+    const loadAll = async () => {
       try {
         setLoading(true);
-        const result = await api.getEmployees();
-        setEmployees(result);
+        const [employeeResult, pendingResult] = await Promise.all([
+          api.getEmployees(),
+          api.getPendingHires()
+        ]);
+        setEmployees(employeeResult);
+        setPendingHires(pendingResult);
         setError(null);
       } catch (requestError) {
         setError(requestError instanceof Error ? requestError.message : 'Unable to load team dashboard');
@@ -40,7 +46,7 @@ export const TeamDashboard = () => {
       }
     };
 
-    void loadEmployees();
+    void loadAll();
   }, []);
 
   const filteredEmployees = useMemo(() => {
@@ -49,6 +55,13 @@ export const TeamDashboard = () => {
       [employee.name, employee.role, employee.department].some((value) => value.toLowerCase().includes(normalized))
     );
   }, [employees, searchQuery]);
+
+  const filteredPending = useMemo(() => {
+    const normalized = searchQuery.toLowerCase();
+    return pendingHires.filter((p) =>
+      [p.name, p.intendedRole, p.department].some((value) => value.toLowerCase().includes(normalized))
+    );
+  }, [pendingHires, searchQuery]);
 
   const summaryCards = useMemo(
     () => [
@@ -59,10 +72,10 @@ export const TeamDashboard = () => {
         icon: Users
       },
       {
-        label: 'Onboarding in Progress',
-        value: employees.filter((employee) => employee.status === 'onboarding').length,
-        trend: '1 new hire this month',
-        icon: GraduationCap
+        label: 'Incoming Hires',
+        value: pendingHires.length,
+        trend: `${pendingHires.filter((p) => Math.ceil((new Date(p.expectedStartDate).getTime() - Date.now()) / 86_400_000) <= 14).length} joining within 2 weeks`,
+        icon: UserPlus
       },
       {
         label: 'Overdue Courses',
@@ -71,13 +84,19 @@ export const TeamDashboard = () => {
         icon: ShieldAlert
       },
       {
+        label: 'Onboarding Active',
+        value: employees.filter((employee) => employee.status === 'onboarding').length,
+        trend: `${employees.filter((e) => e.onboarding.status === 'in_progress').length} ramp in progress`,
+        icon: GraduationCap
+      },
+      {
         label: 'At-Risk Employees',
         value: employees.filter((employee) => employee.riskScore >= 70).length,
         trend: 'Immediate intervention advised',
         icon: AlertTriangle
       }
     ],
-    [employees]
+    [employees, pendingHires]
   );
 
   const askAI = async (question: string) => {
@@ -95,11 +114,12 @@ export const TeamDashboard = () => {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* ── Summary cards ── */}
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className={`rounded-3xl bg-gradient-to-br ${summaryCardStyles[index]} p-6 shadow-soft`}>
+            <div key={card.label} className={`rounded-3xl bg-gradient-to-br ${summaryCardStyles[index % summaryCardStyles.length]} p-6 shadow-soft`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="text-sm font-medium text-white/80">{card.label}</div>
@@ -116,41 +136,81 @@ export const TeamDashboard = () => {
       </section>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section>
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Team members</h3>
-              <p className="text-sm text-slate-500">Live view of onboarding, learning, and risk across your team.</p>
-            </div>
-          </div>
+        <div className="space-y-10">
 
-          {loading ? (
-            <div className="grid gap-5 md:grid-cols-2">
-              {[...Array(4)].map((_, index) => (
-                <div key={index} className="h-72 animate-pulse rounded-3xl bg-white shadow-sm" />
-              ))}
-            </div>
-          ) : error ? (
-            <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-700">{error}</div>
-          ) : (
-            <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-              {filteredEmployees.map((employee) => (
-                <EmployeeCard key={employee.id} employee={employee} />
-              ))}
-              {filteredEmployees.length === 0 && (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
-                  No employees match your search.
+          {/* ── Incoming Hires (pre-boarding) ── */}
+          {(loading || filteredPending.length > 0) && (
+            <section>
+              <div className="mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-100">
+                    <UserPlus size={14} className="text-violet-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">Incoming Hires</h3>
+                  {!loading && (
+                    <span className="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-semibold text-violet-700">
+                      {filteredPending.length}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-slate-500 pl-9">
+                  Candidates with an active onboarding workflow — employee profile not yet created.
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="grid gap-5 md:grid-cols-2">
+                  {[...Array(2)].map((_, index) => (
+                    <div key={index} className="h-56 animate-pulse rounded-3xl bg-white shadow-sm" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                  {filteredPending.map((pending) => (
+                    <PendingEmployeeCard key={pending.id} pending={pending} />
+                  ))}
                 </div>
               )}
-            </div>
+            </section>
           )}
-        </section>
+
+          {/* ── Active team members ── */}
+          <section>
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Team members</h3>
+                <p className="text-sm text-slate-500">Live view of onboarding, learning, and risk across your team.</p>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="grid gap-5 md:grid-cols-2">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="h-72 animate-pulse rounded-3xl bg-white shadow-sm" />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-5 text-sm text-red-700">{error}</div>
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                {filteredEmployees.map((employee) => (
+                  <EmployeeCard key={employee.id} employee={employee} />
+                ))}
+                {filteredEmployees.length === 0 && (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500">
+                    No employees match your search.
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
 
         <aside className="xl:sticky xl:top-8 xl:self-start">
           <AIInsightsPanel
             title="AI Team Insights"
             placeholder="Which employees have overdue compliance training?"
-            quickQuestions={['Who needs attention?', 'Show onboarding progress', 'Any compliance risks?']}
+            quickQuestions={['Who needs attention?', 'Show onboarding progress', 'Any compliance risks?', 'Who is joining soon?']}
             response={aiResponse?.answer}
             loading={aiLoading}
             error={aiError}
