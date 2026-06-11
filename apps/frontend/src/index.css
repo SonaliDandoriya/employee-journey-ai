@@ -1,35 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color: #0f172a;
-  background-color: #f8fafc;
-  font-family: Inter, system-ui, sans-serif;
+  /* CatalystOne UI Lift — system token aliases for global use */
+  --co-bg:          #faf6f3;
+  --co-bg-content:  #f2ece8;
+  --co-border:      #e0dcd9;
+  --co-text:        #2d2c2b;
+  --co-text-muted:  #868482;
+  --co-brand:       #594672;
+  --co-brand-dark:  #3b2e4c;
+
+  color: var(--co-text);
+  background-color: var(--co-bg);
+  font-family: 'Figtree', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--co-bg);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-button,
-input {
-  font: inherit;
-}
+button, input { font: inherit; }
 
-.scrollbar-thin::-webkit-scrollbar {
-  width: 8px;
-}
-
+/* Thin scrollbar for sidebar */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
+  background: rgba(89,70,114,.25);
   border-radius: 9999px;
+}
+
+/* CatalystOne focus ring */
+:focus-visible {
+  outline: 2px solid #594672;
+  outline-offset: 2px;
+}
+
+/* Smooth tab underline animation */
+.co-tab-indicator {
+  transition: transform 200ms ease, width 200ms ease;
 }

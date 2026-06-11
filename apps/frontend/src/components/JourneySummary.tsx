@@ -7,28 +7,29 @@ interface JourneySummaryProps {
 }
 
 const SummarySkeleton = () => (
-  <div className="space-y-3 animate-pulse">
-    <div className="h-4 rounded-full bg-slate-200" />
-    <div className="h-4 w-11/12 rounded-full bg-slate-200" />
-    <div className="h-4 w-10/12 rounded-full bg-slate-200" />
-    <div className="h-4 w-8/12 rounded-full bg-slate-200" />
+  <div className="space-y-2.5 animate-pulse">
+    {[1, 0.9, 0.8, 0.65].map((w, i) => (
+      <div key={i} className="h-3 rounded-full bg-brand-100" style={{ width: `${w * 100}%` }} />
+    ))}
   </div>
 );
 
 export const JourneySummary = ({ summary, loading, error }: JourneySummaryProps) => (
-  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-    <div className="mb-4 flex items-center gap-2">
-      <Sparkles className="text-brand-500" size={18} />
-      <h3 className="text-lg font-semibold text-slate-900">AI Journey Summary</h3>
+  <div className="rounded-co-xl border border-brand-200 bg-brand-50 p-5 shadow-e1">
+    <div className="mb-3 flex items-center gap-2">
+      <div className="flex h-7 w-7 items-center justify-center rounded-co bg-brand-700">
+        <Sparkles size={13} className="text-white" />
+      </div>
+      <h3 className="text-sm font-bold text-brand-800">AI Journey Summary</h3>
     </div>
     {loading ? (
       <SummarySkeleton />
     ) : error ? (
-      <div className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      <div className="rounded-co bg-danger-100 px-3 py-2.5 text-xs text-danger-600">{error}</div>
     ) : summary ? (
-      <p className="text-sm leading-7 text-slate-600">{summary}</p>
+      <p className="text-sm leading-relaxed text-brand-800">{summary}</p>
     ) : (
-      <p className="text-sm text-slate-500">Generate a manager-ready summary to highlight risk, progress, and next steps.</p>
+      <p className="text-xs text-brand-600">Generate a manager-ready summary to highlight risk, progress, and next steps.</p>
     )}
   </div>
 );

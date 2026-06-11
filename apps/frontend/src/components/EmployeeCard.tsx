@@ -8,53 +8,68 @@ import { StatusBadge } from './StatusBadge';
 export const EmployeeCard = ({ employee }: { employee: Employee }) => (
   <Link
     to={`/employee/${employee.id}`}
-    className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-soft"
+    className="group flex flex-col rounded-co-xl border border-warm-400 bg-white shadow-e2 transition-shadow duration-200 hover:shadow-e4"
   >
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700">
-          {employee.avatar}
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900">{employee.name}</h3>
-          <p className="text-sm text-slate-500">{employee.role}</p>
-          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-            <BriefcaseBusiness size={14} />
-            <span>{employee.department}</span>
+    {/* Top stripe — brand colour based on status */}
+    <div className={`h-1 w-full rounded-t-co-xl ${employee.status === 'offboarding' ? 'bg-warm-500' : employee.status === 'onboarding' ? 'bg-cobalt-500' : 'bg-brand-600'}`} />
+
+    <div className="flex flex-col gap-4 p-5">
+      {/* Avatar + name */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-co-lg bg-brand-100 text-sm font-bold text-brand-700">
+            {employee.avatar}
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-semibold text-warm-900">{employee.name}</h3>
+            <p className="truncate text-xs text-warm-700">{employee.role}</p>
+            <div className="mt-1 flex items-center gap-1 text-[11px] text-warm-600">
+              <BriefcaseBusiness size={11} />
+              <span className="truncate">{employee.department}</span>
+            </div>
           </div>
         </div>
+        <ArrowRight size={16} className="mt-0.5 shrink-0 text-warm-500 transition group-hover:text-brand-600" />
       </div>
-      <ArrowRight className="text-slate-300 transition group-hover:text-slate-500" />
-    </div>
 
-    <div className="mt-5 flex items-center justify-between gap-3">
-      <StatusBadge value={employee.status} />
-      <RiskBadge score={employee.riskScore} />
-    </div>
+      {/* Status + Risk */}
+      <div className="flex items-center justify-between gap-2">
+        <StatusBadge value={employee.status} />
+        <RiskBadge score={employee.riskScore} showLabel={false} />
+      </div>
 
-    <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-      <div className="mb-3 flex items-center justify-between text-sm font-medium text-slate-600">
-        <span>Onboarding completion</span>
-        <span>{employee.onboarding.progress}%</span>
-      </div>
-      <ProgressBar value={employee.onboarding.progress} size="sm" showLabel={false} tone={employee.status === 'onboarding' ? 'info' : 'success'} />
-    </div>
-
-    <div className="mt-5 grid grid-cols-3 gap-3 text-sm">
-      <div className="rounded-2xl bg-slate-50 p-3">
-        <div className="text-slate-400">Enrolled</div>
-        <div className="mt-1 text-lg font-semibold text-slate-900">{employee.learning.enrolledCourses}</div>
-      </div>
-      <div className="rounded-2xl bg-slate-50 p-3">
-        <div className="text-slate-400">Completed</div>
-        <div className="mt-1 text-lg font-semibold text-slate-900">{employee.learning.completedCourses}</div>
-      </div>
-      <div className="rounded-2xl bg-slate-50 p-3">
-        <div className="flex items-center gap-1 text-slate-400">
-          <BookOpen size={14} />
-          <span>Overdue</span>
+      {/* Onboarding progress */}
+      <div className="rounded-co bg-beige-600 px-3 py-3">
+        <div className="mb-2 flex items-center justify-between text-xs font-medium text-warm-700">
+          <span>Onboarding</span>
+          <span className="font-semibold text-warm-900">{employee.onboarding.progress}%</span>
         </div>
-        <div className="mt-1 text-lg font-semibold text-red-600">{employee.learning.overdueCourses}</div>
+        <ProgressBar
+          value={employee.onboarding.progress}
+          size="sm"
+          showLabel={false}
+          tone={employee.status === 'onboarding' ? 'info' : 'success'}
+        />
+      </div>
+
+      {/* Learning stats */}
+      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="rounded-co bg-beige-500 py-2">
+          <div className="text-warm-600">Enrolled</div>
+          <div className="mt-0.5 text-base font-bold text-warm-900">{employee.learning.enrolledCourses}</div>
+        </div>
+        <div className="rounded-co bg-beige-500 py-2">
+          <div className="text-warm-600">Done</div>
+          <div className="mt-0.5 text-base font-bold text-warm-900">{employee.learning.completedCourses}</div>
+        </div>
+        <div className="rounded-co bg-beige-500 py-2">
+          <div className="flex items-center justify-center gap-0.5 text-warm-600">
+            <BookOpen size={10} /><span>Late</span>
+          </div>
+          <div className={`mt-0.5 text-base font-bold ${employee.learning.overdueCourses > 0 ? 'text-danger' : 'text-warm-900'}`}>
+            {employee.learning.overdueCourses}
+          </div>
+        </div>
       </div>
     </div>
   </Link>

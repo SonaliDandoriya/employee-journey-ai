@@ -10,7 +10,7 @@ const LayoutShell = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 lg:flex">
+    <div className="min-h-screen bg-beige-500 text-warm-900 lg:flex">
       <Sidebar />
       <div className="flex min-h-screen flex-1 flex-col">
         <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />

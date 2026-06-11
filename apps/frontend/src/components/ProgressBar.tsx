@@ -5,12 +5,13 @@ interface ProgressBarProps {
   showLabel?: boolean;
 }
 
-const toneMap = {
-  default: 'bg-brand-500',
+// CatalystOne UI Lift tone → fill colour
+const fillMap = {
+  default: 'bg-brand-600',
   success: 'bg-success',
-  warning: 'bg-warning',
-  danger: 'bg-danger',
-  info: 'bg-sky-500'
+  warning: 'bg-warning-DEFAULT',
+  danger:  'bg-danger-DEFAULT',
+  info:    'bg-cobalt-500',
 };
 
 export const ProgressBar = ({ value, tone = 'default', size = 'md', showLabel = true }: ProgressBarProps) => {
@@ -19,13 +20,16 @@ export const ProgressBar = ({ value, tone = 'default', size = 'md', showLabel = 
   return (
     <div className="w-full">
       {showLabel && (
-        <div className="mb-2 flex items-center justify-between text-xs font-medium text-slate-500">
+        <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-warm-700">
           <span>Progress</span>
-          <span>{safeValue}%</span>
+          <span className="font-semibold text-warm-900">{safeValue}%</span>
         </div>
       )}
-      <div className={`w-full overflow-hidden rounded-full bg-slate-200 ${size === 'sm' ? 'h-2' : 'h-3'}`}>
-        <div className={`${toneMap[tone]} h-full rounded-full transition-all duration-500`} style={{ width: `${safeValue}%` }} />
+      <div className={`w-full overflow-hidden rounded-full bg-warm-300 ${size === 'sm' ? 'h-1.5' : 'h-2'}`}>
+        <div
+          className={`${fillMap[tone]} h-full rounded-full transition-all duration-500`}
+          style={{ width: `${safeValue}%` }}
+        />
       </div>
     </div>
   );

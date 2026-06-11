@@ -1,54 +1,41 @@
-interface RiskBadgeProps {
-  score: number;
-  showLabel?: boolean;
-}
-
+// CatalystOne UI Lift — risk scoring uses semantic red/orange/green tokens
 const getRiskStyles = (score: number) => {
-  if (score >= 70) {
-    return { label: 'At Risk', badge: 'bg-red-100 text-red-700', ring: 'stroke-red-600' };
-  }
-  if (score >= 40) {
-    return { label: 'Watchlist', badge: 'bg-amber-100 text-amber-700', ring: 'stroke-amber-500' };
-  }
-  return { label: 'Healthy', badge: 'bg-emerald-100 text-emerald-700', ring: 'stroke-emerald-500' };
+  if (score >= 70) return { label: 'At Risk',   badge: 'bg-danger-100 text-danger-600',   ring: '#e42354', track: '#fad3dd' };
+  if (score >= 40) return { label: 'Watchlist', badge: 'bg-warning-100 text-warning-600', ring: '#ff8d4b', track: '#ffe8db' };
+  return              { label: 'Healthy',    badge: 'bg-success-100 text-success-800',  ring: '#198754', track: '#dae7d9' };
 };
 
-export const RiskBadge = ({ score, showLabel = true }: RiskBadgeProps) => {
+export const RiskBadge = ({ score, showLabel = true }: { score: number; showLabel?: boolean }) => {
   const { label, badge } = getRiskStyles(score);
-
   return (
-    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${badge}`}>
-      <span>{score}</span>
-      {showLabel && <span>{label}</span>}
+    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${badge}`}>
+      <span className="font-bold">{score}</span>
+      {showLabel && <span className="font-medium opacity-80">— {label}</span>}
     </div>
   );
 };
 
 export const RiskGauge = ({ score }: { score: number }) => {
-  const radius = 48;
+  const radius = 44;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const { label, ring } = getRiskStyles(score);
+  const { label, ring, track } = getRiskStyles(score);
 
   return (
-    <div className="relative flex h-32 w-32 items-center justify-center">
-      <svg className="-rotate-90" width="120" height="120">
-        <circle cx="60" cy="60" r={radius} stroke="#E2E8F0" strokeWidth="10" fill="none" />
+    <div className="relative flex h-28 w-28 items-center justify-center">
+      <svg className="-rotate-90" width="112" height="112">
+        <circle cx="56" cy="56" r={radius} stroke={track} strokeWidth="8" fill="none" />
         <circle
-          cx="60"
-          cy="60"
-          r={radius}
-          strokeWidth="10"
-          fill="none"
-          strokeLinecap="round"
+          cx="56" cy="56" r={radius}
+          strokeWidth="8" fill="none" strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          className={ring}
+          stroke={ring}
         />
       </svg>
       <div className="absolute text-center">
-        <div className="text-3xl font-bold text-slate-900">{score}</div>
-        <div className="text-xs font-medium text-slate-500">{label}</div>
+        <div className="text-2xl font-bold text-warm-900">{score}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-warm-700">{label}</div>
       </div>
     </div>
   );
